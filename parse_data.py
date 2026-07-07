@@ -8,14 +8,17 @@ Knot ``i`` therefore contributes two entries: ``{i,1}`` maps to its 34 Jones
 coefficients and ``{i,2}`` maps to its hyperbolic volume.  We parse both with
 regular expressions and pair them by the shared index ``i``.
 
-Features (42-dim): eight polynomial-summary features followed by the 34 raw
+Features (45-dim): eleven polynomial-summary features followed by the 34 raw
 coefficients.  The power associated with coefficient index ``k`` (0-based) is
 ``k - 15``.  The summary block is
 [min nonzero power, max nonzero power, degree span, #nonzero terms,
- L1 norm, L2 norm, V(1) = sum of coeffs, V(-1) = alternating sum].
-These are cheap, knot-theoretically motivated descriptors (degree span and the
-evaluations at +/-1 are classically informative) that give a tiny MLP a much
-richer signal than the raw coefficient vector alone.
+ L1 norm, L2 norm, V(1) = sum of coeffs, V(-1) = alternating sum,
+ Re V(q0), Im V(q0), |V(q0)|]  with q0 = exp(3*pi*i/4).
+These are cheap, knot-theoretically motivated descriptors.  Degree span and the
+evaluations at +/-1 are classically informative; the complex phase evaluation
+V(e^{3*pi*i/4}) is the one Jejjala et al. found to track the hyperbolic volume
+almost as well as a full network -- so |V(q0)| in particular is a strong,
+volume-correlated signal for a tiny MLP.
 """
 from __future__ import annotations
 
@@ -31,7 +34,11 @@ _VOL_RE = re.compile(r"\{(\d+),\s*2\}\s*->\s*(-?\d+\.?\d*(?:[eE][-+]?\d+)?)")
 
 N_COEFFS = 34
 POWER_OFFSET = 15  # power of coefficient at index k is (k - POWER_OFFSET)
-N_SUMMARY = 8      # min/max power, span, #nonzero, L1, L2, V(1), V(-1)
+# Best J2 phase for the hyperbolic volume (Jejjala et al.; cf. 2502.18575 eq.
+# discussion of |J2(K; e^{3*pi*i/4})|).  Coefficients are powers of this variable.
+EVAL_PHASE = 3.0 * np.pi / 4.0
+N_SUMMARY = 11     # min/max power, span, #nonzero, L1, L2, V(1), V(-1),
+                   # Re V(q0), Im V(q0), |V(q0)|  with q0 = exp(i*EVAL_PHASE)
 N_FEATURES = N_COEFFS + N_SUMMARY
 
 
@@ -63,10 +70,11 @@ def load_raw(path: str):
 
 
 def build_features(C: np.ndarray) -> np.ndarray:
-    """[N,34] integer coefficients -> [N,42] features.
+    """[N,34] integer coefficients -> [N,45] features.
 
-    Summary block (8): [min nonzero power, max nonzero power, degree span,
-    #nonzero terms, L1 norm, L2 norm, V(1)=sum coeffs, V(-1)=alternating sum].
+    Summary block (11): [min nonzero power, max nonzero power, degree span,
+    #nonzero terms, L1 norm, L2 norm, V(1)=sum coeffs, V(-1)=alternating sum,
+    Re V(q0), Im V(q0), |V(q0)|] with q0 = exp(i*EVAL_PHASE).
     Followed by the 34 raw coefficients.
     """
     C = np.asarray(C, dtype=np.float64)
@@ -91,8 +99,14 @@ def build_features(C: np.ndarray) -> np.ndarray:
     v_at_1 = C.sum(axis=1)                          # V(1) = sum of coeffs
     v_at_neg1 = (C * ((-1.0) ** powers)[None, :]).sum(axis=1)  # V(-1), det-related
 
+    # V(q0) at the volume-correlated phase q0 = exp(i*EVAL_PHASE).
+    qpow = np.exp(1j * EVAL_PHASE * powers)          # [ncoef] complex
+    v_at_q0 = (C * qpow[None, :]).sum(axis=1)        # [n] complex
+    re_q0, im_q0, abs_q0 = v_at_q0.real, v_at_q0.imag, np.abs(v_at_q0)
+
     summary = np.stack(
-        [min_pow, max_pow, span, n_nonzero, l1, l2, v_at_1, v_at_neg1], axis=1)
+        [min_pow, max_pow, span, n_nonzero, l1, l2, v_at_1, v_at_neg1,
+         re_q0, im_q0, abs_q0], axis=1)
     return np.concatenate([summary, C], axis=1)
 
 

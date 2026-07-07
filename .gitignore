@@ -15,3 +15,6 @@ __pycache__/
 
 # Editor / OS cruft
 .DS_Store
+
+# Reference PDFs (large copyrighted arXiv papers; cited by ID in the .md)
+papers/
