@@ -24,7 +24,8 @@ test set — directly comparable to the MRE this repo reports.
 
 | Source | Input | Dataset | Accuracy (1 − MRE) |
 |---|---|---|---|
-| This repo (baseline) | `J2` | ≤13 crossings, 12,955 knots | **97.1%** (test MRE 0.0288) |
+| This repo (42-feat, matched budget) | `J2` | ≤13 crossings, 12,955 knots | 96.9% (test MRE 0.0307; ensemble 0.0286) |
+| This repo (45-feat + phase, matched budget) | `J2` + `V(e^{3πi/4})` | ≤13 crossings, 12,955 knots | **97.1%** (test MRE 0.0289; ensemble **0.0269**) |
 | Craven–Hughes–Jejjala–Kar (arXiv:2211.01404) | `J2` | comparable | ~97% |
 | Hughes et al. (arXiv:2502.18575) | `J2` | ≤15 crossings | 98.1% (1.86%) |
 | Hughes et al. (arXiv:2502.18575) | `J2` | **≤16 crossings, 1.7M knots** | **98.5% (1.44–1.65%)** — best `J2` reported |
@@ -50,14 +51,25 @@ past ~98.5% requires the **`J3` (adjoint) polynomial**, a different, larger data
 
 ## 2. The baseline (before this change)
 
-From the reference NSGA-II run (`results_baseline_42feat.json`), 42 features:
+**The clean comparison is the matched-budget 42-feature run** (`results_matched_42feat.json`,
+SLURM job 16544354, node cn108). It uses the *identical* search budget to the phase
+run — pop 40, gens 40, full training data, gap-constraint 0.01, 4 search seeds,
+7 final seeds, 500 final epochs — so the only difference from the phase run is the
+input representation.
 
-- Knee architecture: depth-2 MLP `[37, 25]`, GELU, **2,345 params**
-- **Test MRE = 0.0288** (≈ 97.1% accuracy); ensemble MRE 0.0276
-- The Pareto front is **flat**: going from 2,345 → 421,672 params (≈180×) only
-  moved validation MRE 0.0329 → 0.0316. That flatness is the signature of an
-  *information ceiling* — the model is not the bottleneck, the `J2` signal on this
-  small dataset is.
+- Knee architecture: depth-2 MLP `[19, 40]`, GELU, **1,658 params**
+- **Test MRE = 0.0307 ± 0.0006** (≈ 96.9% accuracy); ensemble MRE 0.0286
+- The Pareto front is **flat**: going from ~1.6k → ~30k params only moved validation
+  MRE ~0.0305 → ~0.0305. That flatness is the signature of an *information ceiling*
+  — the model is not the bottleneck, the `J2` signal on this small dataset is.
+
+> **Note on `results_baseline_42feat.json`.** An *earlier*, smaller-budget 42-feature
+> run (pop 24, gens 20, subsample 6000, 5 final seeds) is preserved in
+> `results_baseline_42feat.json` and scored test MRE 0.0288 / ensemble 0.0276. Do **not**
+> use it as the before/after control: it confounds the feature change with a budget
+> change, and — being a lower-budget run on a flat information ceiling — it happens to
+> land below the full-budget 42-feature number, which is run-to-run noise, not a real
+> effect. Compare against `results_matched_42feat.json` instead.
 
 ---
 
@@ -130,6 +142,25 @@ Still `J2` on ≤13-crossing data, so the ~97–98% ceiling still applies. The p
 feature gives even a tiny MLP a near-direct line to the volume, so the expected
 effect is a lower error and/or the knee shifting to an *even smaller* model. To
 break past ~98.5% one must move to `J3` (see §1).
+
+### Result (measured, matched budget)
+
+Clean A/B — both runs pop 40 / gens 40 / full data / gap-constraint 0.01 / 7 final
+seeds / 500 final epochs. Only the input representation differs.
+
+| | 42-feat (`results_matched_42feat.json`) | 45-feat + phase (`results_phase/results.json`) |
+|---|---|---|
+| Test MRE (mean ± std) | 0.0307 ± 0.0006 | **0.0289 ± 0.0004** |
+| Test MRE (7-seed ensemble) | 0.0286 | **0.0269** |
+| Accuracy (1 − MRE), ensemble | 97.14% | **97.31%** |
+| Knee arch | `[19, 40]`, 1,658 p | `[32, 18, 54, 18]`, 4,101 p |
+| Best Pareto val MRE | ~0.0305 | 0.0281 |
+
+Adding the phase feature cut test error ~6% relative (both mean and ensemble) and
+lowered the Pareto front at every point. The gain is real but bounded by the `J2`
+information ceiling — consistent with §1. The knee did **not** shrink; it moved to a
+slightly deeper 4-layer net, though the front stays flat, so the smaller `[16]`–`[22]`
+single-layer models are within ~0.004 val MRE of the knee if size matters more.
 
 ---
 
