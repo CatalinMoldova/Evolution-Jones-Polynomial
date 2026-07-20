@@ -8,6 +8,27 @@ the literature analysis that motivated it, and how to reproduce the run.
 
 ---
 
+## 0. Why learn it: a cheap stand-in for an intractable limit
+
+Computing the Jones polynomial at low color (`J2`, or `J2`+`J3`) is cheap, but
+the volume conjecture's actual claim only holds in the limit of infinitely
+high color — a regime that's computationally intractable to reach directly.
+Rather than chasing that limit, this approach trains a network on cheap,
+low-color data paired with independently computed ground-truth volumes. The
+network learns, empirically, whatever complex relationship links these
+low-level polynomial coefficients to the high-level geometric quantity of
+volume. In effect, it substitutes learned pattern-recognition for the
+intractable exact computation, extracting at inference time in a single
+forward pass what would otherwise require an infeasible high-color limit. The
+result is a model that operates cheaply at the low level but effectively
+captures and exploits structure that only becomes meaningful at the higher
+level. A further extension would push this idea one level higher — training a
+network to predict the volume-correlated behavior of higher-color polynomials
+(`J4`, `J5`, …) directly from cheap low-color data, avoiding their direct
+computation entirely rather than merely avoiding the infinite-N limit.
+
+---
+
 ## 1. Background: what data we use and where its accuracy caps out
 
 The dataset in `jones+volume.txt` is the **fundamental (2-colored) Jones
