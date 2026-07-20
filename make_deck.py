@@ -115,6 +115,62 @@ for tag, text, col, bold in bullets:
     r2 = p.add_run(); r2.text = text
     r2.font.size = Pt(20); r2.font.color.rgb = INK; r2.font.name = "Calibri"
 
+# ---------------------------------------------------------------- 2b why learn it
+s = slide()
+accent_bar(s)
+_, tf = box(s, Inches(0.55), Inches(0.3), Inches(12.3), Inches(1.0))
+setpar(tf.paragraphs[0], "Why learn it: a cheap stand-in for an intractable limit",
+       30, INK, bold=True)
+why = [
+    ("The catch", "The volume conjecture's actual claim only holds in the limit "
+     "of infinitely high color N → ∞. Low color (J₂, J₂+J₃) is cheap to "
+     "compute; that limit is computationally intractable to reach directly.",
+     INK),
+    ("The substitution", "Instead of chasing the limit, train on cheap "
+     "low-color data paired with independently computed ground-truth volumes "
+     "(SnapPy). The network learns, empirically, whatever relationship links "
+     "the low-level polynomial coefficients to the high-level geometry.", VERM),
+    ("What you get", "Learned pattern-recognition replaces the intractable "
+     "exact computation: a single forward pass at inference extracts what "
+     "would otherwise require an infeasible high-color limit — cheap at the "
+     "low level, exploiting structure that only becomes meaningful at the "
+     "higher level.", INK),
+    ("One level higher", "Extension: predict the volume-correlated behavior of "
+     "higher-color polynomials (J₄, J₅, …) directly from low-color data — "
+     "avoiding their computation entirely, not merely the infinite-N limit.",
+     BLUE),
+]
+_, bf = box(s, Inches(0.7), Inches(1.5), Inches(12.0), Inches(5.6))
+first = True
+for tag, text, col in why:
+    p = bf.paragraphs[0] if first else bf.add_paragraph()
+    first = False
+    p.space_after = Pt(14)
+    r = p.add_run(); r.text = f"{tag}.  "
+    r.font.bold = True; r.font.size = Pt(19); r.font.color.rgb = col
+    r.font.name = "Calibri"
+    r2 = p.add_run(); r2.text = text
+    r2.font.size = Pt(19); r2.font.color.rgb = INK; r2.font.name = "Calibri"
+s.notes_slide.notes_text_frame.text = (
+    "Computing the Jones polynomial at low color (J2, or J2+J3) is cheap, but "
+    "the volume conjecture's actual claim only holds in the limit of "
+    "infinitely high color — a regime that's computationally intractable to "
+    "reach directly. Rather than chasing that limit, this approach trains a "
+    "network on cheap, low-color data paired with independently computed "
+    "ground-truth volumes. The network learns, empirically, whatever complex "
+    "relationship links these low-level polynomial coefficients to the "
+    "high-level geometric quantity of volume. In effect, it substitutes "
+    "learned pattern-recognition for the intractable exact computation, "
+    "extracting at inference time in a single forward pass what would "
+    "otherwise require an infeasible high-color limit. The result is a model "
+    "that operates cheaply at the low level but effectively captures and "
+    "exploits structure that only becomes meaningful at the higher level. A "
+    "further extension would push this idea one level higher — training a "
+    "network to predict the volume-correlated behavior of higher-color "
+    "polynomials (J4, J5, …) directly from cheap low-color data, avoiding "
+    "their direct computation entirely rather than merely avoiding the "
+    "infinite-N limit.")
+
 # ---------------------------------------------------------------- 3 correlation
 fig_slide("A single phase evaluation nearly tracks the volume",
           "figures/feature_correlation.png",
@@ -369,8 +425,10 @@ conc = [
      "J₂+J₃ 97.9%, reproducing the literature ordering with ~70× fewer "
      "parameters.", BLUE),
     ("Future work", "Scale J₃ to the ≤13-crossing census (12,955 knots) to "
-     "close the data gap toward the published 99.3%; sweep phases for higher "
-     "colors J₄, J₅…; interpret the knee networks symbolically.", INK),
+     "close the data gap toward the published 99.3%; push the substitution "
+     "one level higher — predict the volume-correlated behavior of J₄, J₅, … "
+     "directly from cheap low-color data, avoiding their computation "
+     "entirely; interpret the knee networks symbolically.", INK),
 ]
 _, bf = box(s, Inches(0.7), Inches(1.5), Inches(12.0), Inches(5.6))
 first = True
