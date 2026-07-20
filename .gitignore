@@ -18,3 +18,6 @@ __pycache__/
 
 # Reference PDFs (large copyrighted arXiv papers; cited by ID in the .md)
 papers/
+
+# 75 MB parse cache, regenerable from dataset.numbers with numbers-parser
+data_j2+j3/dataset_cache.json

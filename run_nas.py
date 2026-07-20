@@ -213,7 +213,10 @@ def plot_predictions(y_true, y_pred, path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", required=True, help="path to jones+volume.txt")
+    ap.add_argument("--data", default=None, help="path to jones+volume.txt")
+    ap.add_argument("--feature-set", default=None, choices=["j2", "j3", "j2j3"],
+                    help="use the data_j2+j3 colored-Jones dataset (parse_j2j3) "
+                         "with this feature set instead of --data")
     ap.add_argument("--outdir", default="results")
     ap.add_argument("--split-seed", type=int, default=0)
     ap.add_argument("--log-target", action="store_true",
@@ -259,7 +262,14 @@ def main():
     os.makedirs(cache_dir, exist_ok=True)
 
     # ---- data (test set is created here and never touched until the end) --
-    data = prepare(args.data, seed=args.split_seed, log_target=args.log_target)
+    if (args.feature_set is None) == (args.data is None):
+        ap.error("give exactly one of --data or --feature-set")
+    if args.feature_set is not None:
+        from parse_j2j3 import prepare as prepare_j2j3
+        data = prepare_j2j3(args.feature_set, seed=args.split_seed,
+                            log_target=args.log_target)
+    else:
+        data = prepare(args.data, seed=args.split_seed, log_target=args.log_target)
     set_data(data)  # set BEFORE the pool forks so workers inherit it
     print(f"[data] features={data.n_features}  "
           f"train/val/test={len(data.Xtr)}/{len(data.Xva)}/{len(data.Xte)}  "
